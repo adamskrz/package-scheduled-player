@@ -109,6 +109,7 @@ def get_schedule(url, group, timezone="UTC"):
                     place=text_or_empty(event, "location"),
                     abstract=text_or_empty(event, "description"),
                     speakers=[],
+                    lang="",
                     id=event["uuid"],
                     group=group,
                 )
