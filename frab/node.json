@@ -1,5 +1,5 @@
 {
-    "name": "Plugin: Frab (with WHACK schedule.json)",
+    "name": "Plugin: Frab (WHACK)",
     "permissions": {
         "network": "Has to fetch schedule from remote site"
     },
