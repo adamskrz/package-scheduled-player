@@ -134,7 +134,7 @@ local function check_next_talk()
         return
     end
     last_check_min = check_min
-    
+
     -- Search all next talks
     next_talks = {}
     local room_next = {}
@@ -143,16 +143,19 @@ local function check_next_talk()
 
         -- Find next talk
         if current_room and (current_room.group == "*" or current_room.group == talk.group) then
-            if not room_next[talk.place] and 
-                talk.start_unix > now - 25 * 60 then
+            if not room_next[talk.place] and
+                talk.start_unix > now - 25 * 60 -- talk starting soon (or just started)
+                or
+                (talk.end_unix > now + 5 * 60 and talk.start_unix < now) -- talk still running
+                then
                 room_next[talk.place] = talk
             end
         end
 
         -- Just started?
-        if now > talk.start_unix and 
+        if now > talk.start_unix and
            now < talk.end_unix and
-           talk.start_unix + 15 * 60 > now
+           talk.end_unix - 5 * 60 > now
         then
            next_talks[#next_talks+1] = talk
         end
@@ -337,7 +340,7 @@ local function view_other_talks(starts, ends, config, x1, y1, x2, y2)
         -- time
         local time
         local til = talk.start_unix - now
-        if til > -60 and til < 60 then
+        if talk.end_unix > now and til < 60 then
             time = "Now"
             local w = font:width(time, time_size)+time_size
             text(x+split_x-w, y, time, time_size, r,g,b,1)
@@ -400,11 +403,11 @@ local function view_room_info(starts, ends, config, x1, y1, x2, y2)
     local info_lines = current_room.info_lines
 
     local w = 0
-    for idx = 1, #info_lines do 
+    for idx = 1, #info_lines do
         local line = info_lines[idx]
         w = math.max(w, font:width(line.name, font_size))
     end
-    for idx = 1, #info_lines do 
+    for idx = 1, #info_lines do
         local line = info_lines[idx]
         if line == "splitter" then
             y = y + math.floor(font_size/2)
@@ -474,7 +477,7 @@ local function view_all_talks(starts, ends, config, x1, y1, x2, y2)
         -- time
         local time
         local til = talk.start_unix - now
-        if til > -60 and til < 60 then
+        if talk.end_unix > now and til < 60 then
             time = "Now"
             local w = font:width(time, time_size)+time_size
             text(x+split_x-w, y, time, time_size, rgba(default_color, 1))
