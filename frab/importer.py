@@ -5,8 +5,10 @@ from datetime import timedelta
 
 import dateutil.parser
 import defusedxml.ElementTree as ET
+import json
 
-def get_schedule(url, group):
+
+def get_schedule(url, group, timezone='UTC'):
     def load_events(xml):
         def to_unixtimestamp(dt):
             dt = dt.astimezone(pytz.utc)
@@ -57,7 +59,7 @@ def get_schedule(url, group):
                 place = text_or_empty(event, 'room'),
                 abstract = text_or_empty(event, 'abstract'),
                 speakers = [
-                    unicode(person.text.strip()) 
+                    unicode(person.text.strip())
                     for person in persons
                 ] if persons else [],
                 lang = text_or_empty(event, 'language'),
@@ -66,7 +68,54 @@ def get_schedule(url, group):
             ))
         return parsed_events
 
+    def load_events_json(json_str):
+        def to_unixtimestamp(dt):
+            dt = dt.astimezone(pytz.utc)
+            ts = int(calendar.timegm(dt.timetuple()))
+            return ts
+        def text_or_empty(object, key):
+            value = object.get(key)
+            if value is None:
+                return ""
+            return unicode(value)
+
+        def all_events():
+            return json.loads(json_str)
+
+        parsed_events = []
+        for event in all_events():
+            # schedule times are gmt/utc
+            local_zone = pytz.timezone(timezone)
+            start = dateutil.parser.parse(event['start']).astimezone(local_zone)
+            end = dateutil.parser.parse(event['end']).astimezone(local_zone)
+            duration = end - start
+
+
+            parsed_events.append(dict(
+                start_str = start.strftime('%H:%M'),
+                end_str = end.strftime('%H:%M'),
+                start_unix  = to_unixtimestamp(start),
+                end_unix = to_unixtimestamp(end),
+                duration = int(duration.total_seconds() / 60),
+                title = text_or_empty(event, 'title'),
+                track = text_or_empty(event, 'type'),
+                place = text_or_empty(event, 'location'),
+                abstract = text_or_empty(event, 'description'),
+                speakers = [],
+                id = event['uuid'],
+                group = group,
+            ))
+        return parsed_events
+
     r = requests.get(url)
     r.raise_for_status()
     schedule = r.content
+    if url.endswith('.json'):
+        return load_events_json(schedule)
     return load_events(schedule)
+
+
+if __name__ == "__main__":
+    url = "https://warwickhack.co.uk/schedule.json"
+    schedule = get_schedule(url, "example", timezone='Europe/London')
+    print(schedule)
