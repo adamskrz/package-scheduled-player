@@ -1,10 +1,10 @@
 {
-    "name": "Plugin: Frab",
+    "name": "Plugin: Frab (with WHACK schedule.json)",
     "permissions": {
         "network": "Has to fetch schedule from remote site"
     },
     "options": [{
-        "title": "Frab Conference Plugin",
+        "title": "Frab Conference Plugin (WHACK json edition)",
         "type": "section"
     }, {
         "title": "Font",
